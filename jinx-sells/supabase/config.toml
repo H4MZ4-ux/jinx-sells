@@ -1,4 +1,0 @@
-project_id = "hhvgollsjbqxgkirewfo"
-
-[functions.create-checkout]
-verify_jwt = false
