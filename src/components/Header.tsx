@@ -60,7 +60,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="absolute left-1/2 -translate-x-1/2">
             <h1 className="text-2xl font-bold tracking-tight">
-              <span className="gradient-text">JINX SELS</span>
+              <span className="gradient-text">JINX SELLS</span>
             </h1>
           </Link>
 
