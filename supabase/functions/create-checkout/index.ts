@@ -1,108 +1,109 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-interface CartItem {
-  slug: string;
-  name: string;
-  price: number; // GBP (e.g. 25.00)
-  quantity: number;
-  image?: string;
-}
+@layer base {
+  :root {
+    --background: 40 33% 96%;
+    --foreground: 0 0% 10%;
 
-interface CreateCheckoutBody {
-  items: CartItem[];
-  customerEmail?: string;
-  // sent from the browser so Stripe redirects always return to the correct domain
-  origin?: string;
-}
+    --card: 40 25% 98%;
+    --card-foreground: 0 0% 10%;
 
-function pickSafeOrigin(originFromBody?: string | null, originFromHeader?: string | null) {
-  const candidate = (originFromBody || originFromHeader || "").trim();
-  if (/^https?:\/\//i.test(candidate)) return candidate.replace(/\/$/, "");
-  return "http://localhost:5173";
-}
+    --popover: 40 25% 98%;
+    --popover-foreground: 0 0% 10%;
 
-serve(async (req) => {
-  // CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    --primary: 300 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 40 15% 90%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 300 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 20% 88%;
+    --input: 40 20% 88%;
+    --ring: 300 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(300, 100%, 50%), hsl(320, 100%, 60%));
+    --gradient-hover: linear-gradient(135deg, hsl(320, 100%, 60%), hsl(300, 100%, 50%));
+    --shadow-card: 0 4px 20px -4px hsla(300, 100%, 50%, 0.1);
+    --shadow-card-hover: 0 8px 30px -4px hsla(300, 100%, 50%, 0.2);
   }
 
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 405,
-    });
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 40 33% 96%;
+
+    --card: 0 0% 12%;
+    --card-foreground: 40 33% 96%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 40 33% 96%;
+
+    --primary: 300 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 40 33% 96%;
+
+    --muted: 0 0% 20%;
+    --muted-foreground: 40 15% 60%;
+
+    --accent: 300 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 40 33% 96%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 300 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
   }
 
-  try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set (Supabase -> Edge Functions -> Secrets)");
-    }
-
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
-    });
-
-    const body = (await req.json()) as CreateCheckoutBody;
-    const items = body?.items ?? [];
-    const customerEmail = body?.customerEmail;
-    const origin = pickSafeOrigin(body?.origin ?? null, req.headers.get("origin"));
-
-    if (!Array.isArray(items) || items.length === 0) {
-      throw new Error("No items provided");
-    }
-
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => {
-      if (!item?.name || typeof item.price !== "number" || typeof item.quantity !== "number") {
-        throw new Error("Invalid cart item");
-      }
-
-      return {
-        price_data: {
-          currency: "gbp",
-          product_data: {
-            name: item.name,
-            // IMPORTANT: we intentionally do NOT pass images to Stripe because
-            // your AirPods Max uses a local asset URL which Stripe rejects.
-          },
-          unit_amount: Math.round(item.price * 100), // pence
-        },
-        quantity: item.quantity,
-      };
-    });
-
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: "payment",
-      line_items: lineItems,
-      success_url: `${origin}/checkout?success=true`,
-      cancel_url: `${origin}/checkout?canceled=true`,
-    };
-
-    if (customerEmail) {
-      sessionParams.customer_email = customerEmail;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
-
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("[CREATE-CHECKOUT] Error:", errorMessage);
-
-    return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Space Grotesk', sans-serif;
   }
-});
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer components {
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card-shadow:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-4px);
+  }
+}
