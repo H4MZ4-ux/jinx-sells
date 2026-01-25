@@ -9,42 +9,21 @@ import { Button } from "@/components/ui/button";
 import { getProductBySlug, ColorVariant } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 
-type AnyProduct = {
-  id: string;
-  slug: string;
-  name: string;
-  price: number;
-  originalPrice?: number | null;
-  description?: string;
-  shortDescription?: string;
-
-  // support BOTH formats:
-  image?: string; // old format
-  images?: string[]; // new format
-
-  variants?: ColorVariant[];
-};
-
 export default function ProductDetail() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
 
-  const product = useMemo<AnyProduct | undefined>(() => {
+  const product = useMemo(() => {
     if (!slug) return undefined;
-    return getProductBySlug(slug) as unknown as AnyProduct;
+    return getProductBySlug(slug);
   }, [slug]);
 
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
     null
   );
 
-  // ✅ Works whether your product uses `image` OR `images[]`
-  const baseImage =
-    selectedVariant?.image ??
-    product?.images?.[0] ??
-    product?.image ??
-    "/placeholder.svg";
+  const displayImage = selectedVariant?.image ?? product?.image;
 
   if (!product) {
     return (
@@ -90,7 +69,7 @@ export default function ProductDetail() {
       id: product.id + (selectedVariant ? `-${selectedVariant.slug}` : ""),
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ""),
       price: product.price,
-      image: baseImage,
+      image: displayImage || product.image,
       quantity: 1,
       slug: product.slug,
     });
@@ -112,10 +91,13 @@ export default function ProductDetail() {
           <div className="rounded-2xl border bg-card p-6">
             <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
               <img
-                src={baseImage}
+                src={displayImage || product.image}
                 alt={product.name}
                 className="h-full w-full object-contain"
                 loading="lazy"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+                }}
               />
             </div>
 
@@ -141,7 +123,6 @@ export default function ProductDetail() {
                       </button>
                     );
                   })}
-
                   <button
                     onClick={() => setSelectedVariant(null)}
                     className={[
@@ -177,9 +158,7 @@ export default function ProductDetail() {
               </p>
             ) : null}
 
-            {product.description ? (
-              <p className="mt-4 leading-relaxed">{product.description}</p>
-            ) : null}
+            <p className="mt-4 leading-relaxed">{product.description}</p>
 
             <Button className="mt-8 w-full gap-2" onClick={onAddToCart}>
               <ShoppingBag size={18} />
