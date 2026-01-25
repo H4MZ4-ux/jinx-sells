@@ -1,118 +1,113 @@
-export interface ColorVariant {
-  name: string;
-  color: string; // CSS color value for the swatch
-  slug: string; // Used for Stripe price lookup
-  image: string;
-}
+// src/data/products.ts
 
-export interface Product {
-  id: number;
+export type ColorVariant = {
+  name: string;
+  slug: string;
+  image: string; // URL or /public path
+  price: number;
+  originalPrice?: number;
+  stripePriceId?: string;
+};
+
+export type Product = {
+  id: string;
   slug: string;
   name: string;
-  price: number;
-  originalPrice: number;
-  image: string;
-  isNew: boolean;
   description: string;
   features: string[];
-  colorVariants?: ColorVariant[];
-}
-
-// ✅ IMPORTANT:
-// If you moved the AirPods Max image into /public/images/
-// you MUST reference it like this (NO import):
-const airpodsMaxBlack = "/images/airpods-max-black.png";
+  price: number;
+  originalPrice?: number;
+  badge?: string;
+  images: string[];
+  variants?: ColorVariant[];
+  stripePriceId?: string;
+  category?: string;
+  isFeatured?: boolean;
+};
 
 export const products: Product[] = [
   {
-    id: 1,
+    id: "airpods-pro-2",
     slug: "airpods-pro-2",
     name: "AirPods Pro 2",
+    description:
+      "Premium in-ear wireless earbuds with active noise cancellation and transparency mode.",
+    features: ["ANC + Transparency", "Charging case included", "Great bass + clarity"],
     price: 10,
     originalPrice: 249,
-    image:
-      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83?wid=400&hei=400&fmt=jpeg&qlt=95&.v=1660803972361",
-    isNew: true,
-    description:
-      "The AirPods Pro 2 deliver up to 2x more Active Noise Cancellation than the previous generation. Adaptive Transparency lets you hear the world around you while also reducing loud noises in real time.",
-    features: [
-      "Active Noise Cancellation",
-      "Adaptive Transparency",
-      "Personalized Spatial Audio",
-      "Up to 6 hours of listening time",
-      "MagSafe Charging Case",
-      "Touch control for volume",
+    badge: "New",
+    images: [
+      // Keep these as working external URLs so they never 404 on Vercel
+      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
     ],
+    stripePriceId: "airpods-pro-2", // keep if you map these in checkout
+    category: "earbuds",
+    isFeatured: true,
   },
   {
-    id: 2,
+    id: "airpods-pro-3",
     slug: "airpods-pro-3",
     name: "AirPods Pro 3",
+    description:
+      "Latest gen AirPods with improved sound, better ANC, and upgraded comfort fit.",
+    features: ["Improved ANC", "Better mic quality", "More comfortable fit"],
     price: 15,
     originalPrice: 279,
-    image:
-      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83?wid=400&hei=400&fmt=jpeg&qlt=95&.v=1660803972361",
-    isNew: true,
-    description:
-      "The latest AirPods Pro 3 feature enhanced audio performance, improved noise cancellation, and longer battery life. Experience crystal-clear sound with the H2 chip.",
-    features: [
-      "Next-gen Active Noise Cancellation",
-      "Enhanced Adaptive Transparency",
-      "Improved H2 chip",
-      "Up to 8 hours of listening time",
-      "USB-C MagSafe Case",
-      "Conversation Awareness",
+    badge: "New",
+    images: [
+      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MTJV3?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1693594197615",
     ],
+    stripePriceId: "airpods-pro-3",
+    category: "earbuds",
+    isFeatured: true,
   },
   {
-    id: 3,
+    id: "airpods-4s",
     slug: "airpods-4s",
     name: "AirPods 4s",
+    description:
+      "Lightweight earbuds with clean sound, strong battery, and a reliable everyday fit.",
+    features: ["Clean sound", "Good battery", "Comfort fit"],
     price: 15,
     originalPrice: 179,
-    image:
-      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MME73?wid=400&hei=400&fmt=jpeg&qlt=95&.v=1632861342000",
-    isNew: false,
-    description:
-      "AirPods 4s deliver an all-new design with improved comfort and audio quality. Perfect for everyday listening with seamless device switching.",
-    features: [
-      "Personalized Spatial Audio",
-      "Adaptive EQ",
-      "Force sensor controls",
-      "Up to 6 hours of listening time",
-      "Quick charging case",
-      "Sweat and water resistant",
+    badge: "New",
+    images: [
+      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MME73?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1632861342000",
     ],
+    stripePriceId: "airpods-4s",
+    category: "earbuds",
+    isFeatured: true,
   },
+
+  // ✅ AirPods Max (BLACK) — your local file is in /public, so use "/airpods-max-black.png"
   {
-    id: 4,
+    id: "airpods-max",
     slug: "airpods-max",
     name: "AirPods Max",
+    description:
+      "Over-ear headphones with premium build, spatial audio, and strong noise cancellation.",
+    features: ["Over-ear ANC", "Premium build", "Spatial audio"],
     price: 25,
     originalPrice: 549,
-    image: airpodsMaxBlack,
-    isNew: false,
-    description:
-      "AirPods Max combine high-fidelity audio with industry-leading Active Noise Cancellation. The over-ear design features breathable knit mesh and memory foam ear cushions.",
-    features: [
-      "High-Fidelity Audio",
-      "Active Noise Cancellation",
-      "Transparency mode",
-      "Up to 20 hours of listening time",
-      "Digital Crown for control",
-      "Premium build quality",
-    ],
-    colorVariants: [
-      { name: "Midnight", color: "#1d1d1f", slug: "airpods-max-midnight", image: airpodsMaxBlack },
-      { name: "Silver", color: "#e3e4e5", slug: "airpods-max-silver", image: airpodsMaxBlack },
-      { name: "Blue", color: "#5eb0e5", slug: "airpods-max-blue", image: airpodsMaxBlack },
-      { name: "Green", color: "#aed4b6", slug: "airpods-max-green", image: airpodsMaxBlack },
-      { name: "Pink", color: "#f5c3c8", slug: "airpods-max-pink", image: airpodsMaxBlack },
-    ],
+    images: ["/airpods-max-black.png"],
+    stripePriceId: "airpods-max",
+    category: "headphones",
+    isFeatured: true,
   },
 ];
 
-// ✅ This fixes your Vercel build error
-export const getProductBySlug = (slug: string): Product | undefined => {
+// ✅ REQUIRED by ProductDetail.tsx
+export function getProductBySlug(slug: string): Product | undefined {
   return products.find((p) => p.slug === slug);
-};
+}
+
+// Helpful utilities (safe)
+export function getProductById(id: string): Product | undefined {
+  return products.find((p) => p.id === id);
+}
+
+export function getProductByPriceId(stripePriceId: string): Product | undefined {
+  return products.find((p) => p.stripePriceId === stripePriceId);
+}
+
+export const featuredProducts = products.filter((p) => p.isFeatured);
