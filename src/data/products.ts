@@ -29,7 +29,7 @@ export const products: Product[] = [
     slug: "airpods-pro-2",
     price: 10,
     originalPrice: 249,
-    image: "/images/airpods-pro-2.png",
+    image: "https://cdsassets.apple.com/live/7WUAS350/images/tech-specs/airpods-pro-2.png",
     shortDescription: "Noise cancelling, great fit, clean audio.",
     description:
       "Premium earbuds with active noise cancelling, transparency mode, and a comfortable in-ear fit. Includes charging case.",
