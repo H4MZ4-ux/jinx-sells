@@ -9,12 +9,7 @@ const features = [
   {
     icon: Truck,
     title: "Fast Shipping",
-    description: "Free next-day delivery on all UK orders",
-  },
-  {
-    icon: RefreshCw,
-    title: "Easy Returns",
-    description: "30-day hassle-free return policy",
+    description: "2-3 delivery on all UK orders",
   },
   {
     icon: Headphones,
