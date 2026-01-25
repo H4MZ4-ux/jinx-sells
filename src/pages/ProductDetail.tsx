@@ -9,21 +9,42 @@ import { Button } from "@/components/ui/button";
 import { getProductBySlug, ColorVariant } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 
+type AnyProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  originalPrice?: number | null;
+  description?: string;
+  shortDescription?: string;
+
+  // support BOTH formats:
+  image?: string; // old format
+  images?: string[]; // new format
+
+  variants?: ColorVariant[];
+};
+
 export default function ProductDetail() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const { addItem } = useCart();
 
-  const product = useMemo(() => {
+  const product = useMemo<AnyProduct | undefined>(() => {
     if (!slug) return undefined;
-    return getProductBySlug(slug);
+    return getProductBySlug(slug) as unknown as AnyProduct;
   }, [slug]);
 
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
     null
   );
 
-  const displayImage = selectedVariant?.image ?? product?.image;
+  // ✅ Works whether your product uses `image` OR `images[]`
+  const baseImage =
+    selectedVariant?.image ??
+    product?.images?.[0] ??
+    product?.image ??
+    "/placeholder.svg";
 
   if (!product) {
     return (
@@ -69,7 +90,7 @@ export default function ProductDetail() {
       id: product.id + (selectedVariant ? `-${selectedVariant.slug}` : ""),
       name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ""),
       price: product.price,
-      image: displayImage || product.image,
+      image: baseImage,
       quantity: 1,
       slug: product.slug,
     });
@@ -91,7 +112,7 @@ export default function ProductDetail() {
           <div className="rounded-2xl border bg-card p-6">
             <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
               <img
-                src={displayImage || product.image}
+                src={baseImage}
                 alt={product.name}
                 className="h-full w-full object-contain"
                 loading="lazy"
@@ -120,6 +141,7 @@ export default function ProductDetail() {
                       </button>
                     );
                   })}
+
                   <button
                     onClick={() => setSelectedVariant(null)}
                     className={[
@@ -155,7 +177,9 @@ export default function ProductDetail() {
               </p>
             ) : null}
 
-            <p className="mt-4 leading-relaxed">{product.description}</p>
+            {product.description ? (
+              <p className="mt-4 leading-relaxed">{product.description}</p>
+            ) : null}
 
             <Button className="mt-8 w-full gap-2" onClick={onAddToCart}>
               <ShoppingBag size={18} />
