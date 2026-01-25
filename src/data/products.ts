@@ -86,7 +86,7 @@ export const products: Product[] = [
     price: 110,
     originalPrice: 1199,
     image:
-      "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/iphone-15-pro-max-orange?wid=532&hei=582&fmt=png-alpha",
+      "https://www.dealmonday.co.uk/image/cache/wp/gp/Apple/Apple-iPhone-17-Pro-Max-Silver-UK-5-3-800x800w.webp",
     shortDescription: "Large display, powerful performance.",
     description:
       "iPhone 17 Pro Max featuring a large display, top-tier performance, and premium build quality. Available exclusively in Orange.",
