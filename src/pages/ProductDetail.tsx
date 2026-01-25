@@ -1,169 +1,173 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Check, ShoppingBag } from "lucide-react";
+// src/pages/ProductDetail.tsx
+
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, ShoppingBag } from "lucide-react";
+
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { getProductBySlug, ColorVariant } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import CartSidebar from "@/components/CartSidebar";
 
-const ProductDetail = () => {
-  const { slug } = useParams();
+export default function ProductDetail() {
   const navigate = useNavigate();
-  const { addToCart } = useCart();
-  
-  const product = getProductBySlug(slug || "");
-  const [selectedColor, setSelectedColor] = useState<ColorVariant | undefined>(
-    product?.colorVariants?.[0]
+  const { slug } = useParams<{ slug: string }>();
+  const { addItem } = useCart();
+
+  const product = useMemo(() => {
+    if (!slug) return undefined;
+    return getProductBySlug(slug);
+  }, [slug]);
+
+  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
+    null
   );
+
+  const displayImage = selectedVariant?.image ?? product?.image;
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <Button onClick={() => navigate("/")}>Go Home</Button>
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+            <ArrowLeft size={18} />
+            Back
+          </Button>
+
+          <div className="mt-8 rounded-xl border p-6">
+            <h1 className="text-2xl font-semibold">Product not found</h1>
+            <p className="mt-2 text-muted-foreground">
+              The product link may be wrong or the item was removed.
+            </p>
+            <Button className="mt-6" onClick={() => navigate("/catalog")}>
+              Go to Catalog
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const currentImage = selectedColor?.image || product.image;
+  const priceText = new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 0,
+  }).format(product.price);
 
-  const handleAddToCart = () => {
-    addToCart(product, selectedColor);
+  const originalText =
+    product.originalPrice != null
+      ? new Intl.NumberFormat("en-GB", {
+          style: "currency",
+          currency: "GBP",
+          maximumFractionDigits: 0,
+        }).format(product.originalPrice)
+      : null;
+
+  const onAddToCart = () => {
+    addItem({
+      id: product.id + (selectedVariant ? `-${selectedVariant.slug}` : ""),
+      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ""),
+      price: product.price,
+      image: displayImage || product.image,
+      quantity: 1,
+      slug: product.slug,
+    });
+
+    navigate("/cart");
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <CartSidebar />
-      
-      <main className="container mx-auto px-6 py-12">
-        {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
+
+      <div className="mx-auto max-w-5xl px-4 py-10">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+          <ArrowLeft size={18} />
           Back
-        </button>
+        </Button>
 
-        <div className="grid md:grid-cols-2 gap-12 lg:gap-20">
-          {/* Product Image */}
-          <div className="bg-secondary/50 rounded-2xl p-12 flex items-center justify-center aspect-square">
-            <img
-              src={currentImage}
-              alt={product.name}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-
-          {/* Product Info */}
-          <div className="flex flex-col">
-            {product.isNew && (
-              <span className="inline-block w-fit px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full mb-4">
-                New
-              </span>
-            )}
-            
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl font-bold text-primary">£{product.price}</span>
-              <span className="text-xl text-muted-foreground line-through">£{product.originalPrice}</span>
-              <span className="px-2 py-1 bg-green-100 text-green-700 text-sm font-medium rounded">
-                Save £{product.originalPrice - product.price}
-              </span>
+        <div className="mt-6 grid gap-8 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card p-6">
+            <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
+              <img
+                src={displayImage || product.image}
+                alt={product.name}
+                className="h-full w-full object-contain"
+                loading="lazy"
+              />
             </div>
 
-            <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              {product.description}
-            </p>
-
-            {/* Color Selection */}
-            {product.colorVariants && product.colorVariants.length > 0 && (
-              <div className="mb-8">
-                <h3 className="font-semibold mb-4">
-                  Color: <span className="text-muted-foreground font-normal">{selectedColor?.name}</span>
-                </h3>
-                <div className="flex gap-3">
-                  {product.colorVariants.map((variant) => (
-                    <button
-                      key={variant.slug}
-                      onClick={() => setSelectedColor(variant)}
-                      className={`w-10 h-10 rounded-full transition-all flex items-center justify-center ${
-                        selectedColor?.slug === variant.slug
-                          ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                          : "hover:scale-110"
-                      }`}
-                      style={{ backgroundColor: variant.color }}
-                      title={variant.name}
-                    >
-                      {selectedColor?.slug === variant.slug && (
-                        <Check 
-                          className="w-4 h-4" 
-                          style={{ 
-                            color: variant.name === "Silver" || variant.name === "Pink" || variant.name === "Green" || variant.name === "Blue" 
-                              ? "#1d1d1f" 
-                              : "#ffffff" 
-                          }} 
-                        />
-                      )}
-                    </button>
-                  ))}
+            {product.variants?.length ? (
+              <div className="mt-5">
+                <p className="text-sm text-muted-foreground">Colours</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {product.variants.map((v) => {
+                    const active = selectedVariant?.slug === v.slug;
+                    return (
+                      <button
+                        key={v.slug}
+                        onClick={() => setSelectedVariant(v)}
+                        className={[
+                          "rounded-full border px-3 py-1 text-sm transition",
+                          active
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:bg-muted",
+                        ].join(" ")}
+                        type="button"
+                      >
+                        {v.name}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setSelectedVariant(null)}
+                    className={[
+                      "rounded-full border px-3 py-1 text-sm transition",
+                      selectedVariant === null
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted",
+                    ].join(" ")}
+                    type="button"
+                  >
+                    Default
+                  </button>
                 </div>
               </div>
-            )}
+            ) : null}
+          </div>
 
-            {/* Features */}
-            <div className="mb-8">
-              <h3 className="font-semibold mb-4">Features</h3>
-              <ul className="space-y-3">
-                {product.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Check className="w-3 h-3 text-primary" />
-                    </div>
-                    <span className="text-muted-foreground">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+          <div className="rounded-2xl border bg-card p-6">
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+
+            <div className="mt-3 flex items-end gap-3">
+              <div className="text-2xl font-semibold">{priceText}</div>
+              {originalText ? (
+                <div className="text-muted-foreground line-through">
+                  {originalText}
+                </div>
+              ) : null}
             </div>
 
-            {/* Add to Cart */}
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-lg font-medium mt-auto"
-              onClick={handleAddToCart}
-            >
-              <ShoppingBag className="w-5 h-5 mr-2" />
-              Add to Cart - £{product.price}
+            {product.shortDescription ? (
+              <p className="mt-3 text-muted-foreground">
+                {product.shortDescription}
+              </p>
+            ) : null}
+
+            <p className="mt-4 leading-relaxed">{product.description}</p>
+
+            <Button className="mt-8 w-full gap-2" onClick={onAddToCart}>
+              <ShoppingBag size={18} />
+              Add to cart
             </Button>
 
-            {/* Trust badges */}
-            <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-border">
-              <div className="text-center">
-                <p className="text-sm font-medium">Free Shipping</p>
-                <p className="text-xs text-muted-foreground">On all UK orders</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium">30-Day Returns</p>
-                <p className="text-xs text-muted-foreground">Hassle-free</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium">Quality Tested</p>
-                <p className="text-xs text-muted-foreground">Before shipping</p>
-              </div>
-            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              You’ll complete payment securely via Stripe on checkout.
+            </p>
           </div>
         </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
-};
-
-export default ProductDetail;
+}
