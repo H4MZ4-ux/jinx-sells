@@ -10,26 +10,23 @@ const corsHeaders = {
 interface CartItem {
   slug: string;
   name: string;
-  price: number; // GBP (e.g. 25.00)
+  price: number; // GBP
   quantity: number;
-  image?: string;
 }
 
 interface CreateCheckoutBody {
   items: CartItem[];
   customerEmail?: string;
-  // sent from the browser so Stripe redirects always return to the correct domain
   origin?: string;
 }
 
-function pickSafeOrigin(originFromBody?: string | null, originFromHeader?: string | null) {
-  const candidate = (originFromBody || originFromHeader || "").trim();
-  if (/^https?:\/\//i.test(candidate)) return candidate.replace(/\/$/, "");
-  return "http://localhost:5173";
+function safeOrigin(bodyOrigin?: string | null, headerOrigin?: string | null) {
+  const origin = bodyOrigin || headerOrigin || "";
+  if (/^https?:\/\//.test(origin)) return origin.replace(/\/$/, "");
+  return "https://your-domain.com";
 }
 
 serve(async (req) => {
-  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -44,63 +41,66 @@ serve(async (req) => {
   try {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
-      throw new Error("STRIPE_SECRET_KEY is not set (Supabase -> Edge Functions -> Secrets)");
+      throw new Error("STRIPE_SECRET_KEY is not set");
     }
 
-    const stripe = new Stripe(stripeKey, {
-      apiVersion: "2023-10-16",
-    });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
     const body = (await req.json()) as CreateCheckoutBody;
-    const items = body?.items ?? [];
-    const customerEmail = body?.customerEmail;
-    const origin = pickSafeOrigin(body?.origin ?? null, req.headers.get("origin"));
+    const items = body.items ?? [];
+    const origin = safeOrigin(body.origin, req.headers.get("origin"));
 
-    if (!Array.isArray(items) || items.length === 0) {
-      throw new Error("No items provided");
-    }
+    if (items.length === 0) throw new Error("No items in cart");
 
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((item) => {
-      if (!item?.name || typeof item.price !== "number" || typeof item.quantity !== "number") {
-        throw new Error("Invalid cart item");
-      }
-
-      return {
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map(
+      (item) => ({
         price_data: {
           currency: "gbp",
-          product_data: {
-            name: item.name,
-            // IMPORTANT: we intentionally do NOT pass images to Stripe because
-            // your AirPods Max uses a local asset URL which Stripe rejects.
-          },
-          unit_amount: Math.round(item.price * 100), // pence
+          product_data: { name: item.name },
+          unit_amount: Math.round(item.price * 100),
         },
         quantity: item.quantity,
-      };
-    });
+      })
+    );
 
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    const session = await stripe.checkout.sessions.create({
       mode: "payment",
+
       line_items: lineItems,
+
+      // ✅ COLLECT SHIPPING ADDRESS
+      shipping_address_collection: {
+        allowed_countries: ["GB"],
+      },
+
+      // ✅ £3 SHIPPING COST
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: {
+              amount: 300, // £3.00 in pence
+              currency: "gbp",
+            },
+            display_name: "Standard Shipping",
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: 2 },
+              maximum: { unit: "business_day", value: 5 },
+            },
+          },
+        },
+      ],
+
       success_url: `${origin}/checkout?success=true`,
       cancel_url: `${origin}/checkout?canceled=true`,
-    };
-
-    if (customerEmail) {
-      sessionParams.customer_email = customerEmail;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("[CREATE-CHECKOUT] Error:", errorMessage);
-
-    return new Response(JSON.stringify({ error: errorMessage }), {
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
