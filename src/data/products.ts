@@ -41,7 +41,7 @@ export const products: Product[] = [
     slug: "airpods-pro-3",
     price: 15,
     originalPrice: 279,
-    image: "/images/airpods-pro-3.png",
+    image: "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/airpods-pro-3-hero-select-202509_FMT_WHH?wid=752&hei=636&fmt=jpeg&qlt=90&.v=1758077264181",
     shortDescription: "Upgraded sound + ANC, all-day use.",
     description:
       "High quality wireless earbuds with solid bass, crisp vocals, and improved noise cancelling. Includes charging case.",
@@ -53,7 +53,7 @@ export const products: Product[] = [
     slug: "airpods-4s",
     price: 15,
     originalPrice: 179,
-    image: "/images/airpods-4s.png",
+    image: "https://m.media-amazon.com/images/I/61DvMw16ITL.jpg",
     shortDescription: "Lightweight, smooth sound, easy pairing.",
     description:
       "Comfortable earbuds with stable connection and clear audio. Great for everyday listening and calls.",
