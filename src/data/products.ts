@@ -75,6 +75,11 @@ export const products: Product[] = [
     featured: true,
     variants: [
       { name: "Black", slug: "black", image: "/airpods-max-black.png" },
+      { name: "Black", slug: "blue"},
+      { name: "Black", slug: "white"},
+      { name: "Black", slug: "purple"},
+      { name: "Black", slug: "pink"},
+      { name: "Black", slug: "green"},
     ],
   },
 
