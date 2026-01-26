@@ -81,7 +81,7 @@ export const products: Product[] = [
   // 🔥 NEW PRODUCT
   {
     id: "iphone-17-pro-max",
-    name: "iPhone 17 Pro Max",
+    name: "iPhone 17 Pro Max *NEW*",
     slug: "iphone-17-pro-max",
     price: 110,
     originalPrice: 1199,
