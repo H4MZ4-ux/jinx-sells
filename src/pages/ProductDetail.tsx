@@ -1,7 +1,3 @@
-// src/pages/ProductDetail.tsx
-
-import { useEffect } from "react";
-import { fetchStockMap } from "@/lib/stock";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
@@ -14,16 +10,14 @@ import { useCart } from "@/context/CartContext";
 export default function ProductDetail() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
-  const { addItem } = useCart();
+  const { addToCart } = useCart();
 
   const product = useMemo(() => {
     if (!slug) return undefined;
     return getProductBySlug(slug);
   }, [slug]);
 
-  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
-    null
-  );
+  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(null);
 
   const displayImage = selectedVariant?.image ?? product?.image;
 
@@ -67,15 +61,7 @@ export default function ProductDetail() {
       : null;
 
   const onAddToCart = () => {
-    addItem({
-      id: product.id + (selectedVariant ? `-${selectedVariant.slug}` : ""),
-      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ""),
-      price: product.price,
-      image: displayImage || product.image,
-      quantity: 1,
-      slug: product.slug,
-    });
-
+    addToCart(product, selectedVariant);
     navigate("/cart");
   };
 
@@ -97,9 +83,6 @@ export default function ProductDetail() {
                 alt={product.name}
                 className="h-full w-full object-contain"
                 loading="lazy"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-                }}
               />
             </div>
 
@@ -125,6 +108,7 @@ export default function ProductDetail() {
                       </button>
                     );
                   })}
+
                   <button
                     onClick={() => setSelectedVariant(null)}
                     className={[
@@ -148,16 +132,12 @@ export default function ProductDetail() {
             <div className="mt-3 flex items-end gap-3">
               <div className="text-2xl font-semibold">{priceText}</div>
               {originalText ? (
-                <div className="text-muted-foreground line-through">
-                  {originalText}
-                </div>
+                <div className="text-muted-foreground line-through">{originalText}</div>
               ) : null}
             </div>
 
             {product.shortDescription ? (
-              <p className="mt-3 text-muted-foreground">
-                {product.shortDescription}
-              </p>
+              <p className="mt-3 text-muted-foreground">{product.shortDescription}</p>
             ) : null}
 
             <p className="mt-4 leading-relaxed">{product.description}</p>
