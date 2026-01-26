@@ -1,5 +1,7 @@
 // src/pages/ProductDetail.tsx
 
+import { useEffect } from "react";
+import { fetchStockMap } from "@/lib/stock";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
