@@ -1,60 +1,118 @@
+import { Link } from "react-router-dom";
 import { Instagram, Twitter, Mail } from "lucide-react";
 
-const Footer = () => {
+export default function Footer() {
   return (
-    <footer id="contact" className="bg-foreground text-background py-16">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          {/* Brand */}
-          <div className="md:col-span-2">
-            <h2 className="text-2xl font-bold mb-4">
-              <span className="gradient-text">JINX</span>
-            </h2>
-            <p className="text-background/60 mb-6 max-w-sm">
-              Your trusted source for premium AirPods replicas at unbeatable prices.
+    <footer className="border-t border-border/60 bg-background">
+      <div className="mx-auto max-w-6xl px-6 py-14">
+        <div className="grid gap-10 md:grid-cols-3">
+          {/* Left */}
+          <div>
+            <div className="text-xl font-bold text-primary">JINX</div>
+            <p className="mt-3 text-sm text-muted-foreground max-w-sm">
+              Your trusted source for premium products at unbeatable prices.
             </p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-primary transition-colors">
-                <Instagram className="w-5 h-5" />
+
+            <div className="mt-6 flex items-center gap-4">
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="rounded-lg border border-border/60 p-2 hover:bg-muted transition"
+              >
+                <Instagram className="h-4 w-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-primary transition-colors">
-                <Twitter className="w-5 h-5" />
+              <a
+                href="#"
+                aria-label="Twitter"
+                className="rounded-lg border border-border/60 p-2 hover:bg-muted transition"
+              >
+                <Twitter className="h-4 w-4" />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center hover:bg-primary transition-colors">
-                <Mail className="w-5 h-5" />
+              <a
+                href="mailto:info@example.com"
+                aria-label="Email"
+                className="rounded-lg border border-border/60 p-2 hover:bg-muted transition"
+              >
+                <Mail className="h-4 w-4" />
               </a>
             </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-semibold mb-4">Quick Links</h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">Home</a></li>
-              <li><a href="#catalog" className="text-background/60 hover:text-primary transition-colors">Catalog</a></li>
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">About Us</a></li>
-              <li><a href="#contact" className="text-background/60 hover:text-primary transition-colors">Contact</a></li>
+            <div className="text-sm font-semibold">Quick Links</div>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link to="/" className="hover:text-foreground transition">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/catalog" className="hover:text-foreground transition">
+                  Catalog
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-foreground transition">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-foreground transition">
+                  Contact
+                </Link>
+              </li>
+
+              {/* ✅ NEW: Admin Panel link */}
+              <li className="pt-2">
+                <Link
+                  to="/admin"
+                  className="font-medium text-primary hover:opacity-90 transition"
+                >
+                  Admin Panel
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Support */}
           <div>
-            <h3 className="font-semibold mb-4">Support</h3>
-            <ul className="space-y-3">
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">FAQs</a></li>
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">Shipping Info</a></li>
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">Returns</a></li>
-              <li><a href="#" className="text-background/60 hover:text-primary transition-colors">Track Order</a></li>
+            <div className="text-sm font-semibold">Support</div>
+            <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link to="/faqs" className="hover:text-foreground transition">
+                  FAQs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/shipping"
+                  className="hover:text-foreground transition"
+                >
+                  Shipping Info
+                </Link>
+              </li>
+              <li>
+                <Link to="/returns" className="hover:text-foreground transition">
+                  Returns
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/track-order"
+                  className="hover:text-foreground transition"
+                >
+                  Track Order
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t border-background/10 pt-8 text-center text-background/40 text-sm">
-          <p>© 2026 Jinx. All rights reserved.</p>
+        <div className="mt-12 border-t border-border/60 pt-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} Jinx. All rights reserved.
         </div>
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}
