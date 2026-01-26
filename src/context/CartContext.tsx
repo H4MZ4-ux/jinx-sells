@@ -1,14 +1,26 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product, ColorVariant } from "@/data/products";
 
+/**
+ * Backwards compatible cart item:
+ * - Old code likely expects: id, name, price, image, quantity, slug
+ * - New variant-aware code uses: key + selectedVariant
+ */
 export type CartItem = {
-  key: string; // unique per product + variant
-  productId: string;
+  // Old field (many components expect this)
+  id: string;
+
+  // Variant-aware unique key (we also keep this)
+  key: string;
+
+  productId?: string;
   slug: string;
+
   name: string;
   price: number;
   image: string;
   quantity: number;
+
   selectedVariant?: {
     slug: string;
     name: string;
@@ -16,24 +28,45 @@ export type CartItem = {
   };
 };
 
+type OldAddItemPayload = {
+  id: string; // could already include -variant suffix
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+  slug: string;
+};
+
 type CartContextType = {
   items: CartItem[];
+
+  // ✅ NEW API
   addToCart: (product: Product, variant?: ColorVariant | null, quantity?: number) => void;
-  removeFromCart: (key: string) => void;
-  setQuantity: (key: string, quantity: number) => void;
+  removeFromCart: (keyOrId: string) => void;
+  setQuantity: (keyOrId: string, quantity: number) => void;
+
+  // ✅ OLD API (kept so Header/CartSidebar still works)
+  addItem: (item: OldAddItemPayload) => void;
+  removeItem: (id: string) => void;
+  updateQuantity: (id: string, quantity: number) => void;
+
   clearCart: () => void;
+
   totalItems: number;
   subtotal: number;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
-
 const STORAGE_KEY = "jinx_cart_v1";
+
+function normalizeKey(idOrKey: string) {
+  // We treat whatever the UI passes (id/key) as the key.
+  return idOrKey;
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // Load from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -43,7 +76,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Save to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -52,6 +84,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items]);
 
+  // ✅ NEW: Add product + optional variant
   const addToCart: CartContextType["addToCart"] = (product, variant, quantity = 1) => {
     const variantKey = variant?.slug ? `:${variant.slug}` : "";
     const key = `${product.id}${variantKey}`;
@@ -66,13 +99,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => {
       const existing = prev.find((i) => i.key === key);
       if (existing) {
-        return prev.map((i) =>
-          i.key === key ? { ...i, quantity: i.quantity + quantity } : i
-        );
+        return prev.map((i) => (i.key === key ? { ...i, quantity: i.quantity + quantity } : i));
       }
 
       const next: CartItem = {
-        key,
+        id: key,     // important: old UI uses id
+        key,         // important: new key
         productId: product.id,
         slug: product.slug,
         name,
@@ -86,17 +118,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const removeFromCart = (key: string) => {
-    setItems((prev) => prev.filter((i) => i.key !== key));
+  // ✅ OLD: Add prebuilt item (what your current Header/CartSidebar likely uses)
+  const addItem: CartContextType["addItem"] = (item) => {
+    const key = normalizeKey(item.id);
+
+    setItems((prev) => {
+      const existing = prev.find((i) => i.key === key);
+      if (existing) {
+        return prev.map((i) => (i.key === key ? { ...i, quantity: i.quantity + item.quantity } : i));
+      }
+
+      const next: CartItem = {
+        id: item.id,
+        key,
+        slug: item.slug,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+      };
+
+      return [...prev, next];
+    });
   };
 
-  const setQuantity = (key: string, quantity: number) => {
+  const removeFromCart: CartContextType["removeFromCart"] = (keyOrId) => {
+    const key = normalizeKey(keyOrId);
+    setItems((prev) => prev.filter((i) => i.key !== key && i.id !== key));
+  };
+
+  const removeItem: CartContextType["removeItem"] = (id) => removeFromCart(id);
+
+  const setQuantity: CartContextType["setQuantity"] = (keyOrId, quantity) => {
+    const key = normalizeKey(keyOrId);
     setItems((prev) =>
       prev
-        .map((i) => (i.key === key ? { ...i, quantity: Math.max(1, quantity) } : i))
+        .map((i) =>
+          i.key === key || i.id === key
+            ? { ...i, quantity: Math.max(1, quantity) }
+            : i
+        )
         .filter((i) => i.quantity > 0)
     );
   };
+
+  const updateQuantity: CartContextType["updateQuantity"] = (id, quantity) => setQuantity(id, quantity);
 
   const clearCart = () => setItems([]);
 
@@ -108,6 +174,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     addToCart,
     removeFromCart,
     setQuantity,
+
+    // old API
+    addItem,
+    removeItem,
+    updateQuantity,
+
     clearCart,
     totalItems,
     subtotal,
