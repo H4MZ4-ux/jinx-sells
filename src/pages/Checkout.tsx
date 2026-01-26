@@ -213,7 +213,7 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span className="text-primary">Free</span>
+                <span className="text-primary">£5 UK</span>
               </div>
               <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">
                 <span>Total</span>
