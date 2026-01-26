@@ -1,66 +1,162 @@
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ShoppingBag, X } from "lucide-react";
+
+import type { Product, ColorVariant } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { Product } from "@/data/products";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
-interface ProductCardProps {
-  product: Product;
-}
-
-const ProductCard = ({ product }: ProductCardProps) => {
+export default function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
-  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<ColorVariant | null>(null);
 
-  const handleClick = () => {
-    navigate(`/product/${product.slug}`);
+  const hasVariants = !!product.variants?.length;
+
+  const displayImage = useMemo(() => {
+    return selected?.image ?? product.image;
+  }, [selected, product.image]);
+
+  const onQuickAdd = () => {
+    if (hasVariants) {
+      setOpen(true);
+      return;
+    }
+    addToCart(product, null);
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    addToCart(product);
+  const confirmAdd = () => {
+    addToCart(product, selected);
+    setOpen(false);
+    setSelected(null);
   };
 
   return (
-    <div 
-      className="group bg-card rounded-xl overflow-hidden card-shadow border border-border cursor-pointer"
-      onClick={handleClick}
-    >
-      {/* Image Container */}
-      <div className="relative aspect-square bg-secondary/50 flex items-center justify-center p-8 overflow-hidden">
-        {product.isNew && (
-          <span className="absolute top-4 left-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
-            New
-          </span>
-        )}
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-3/4 h-auto object-contain transition-transform duration-500 group-hover:scale-110"
-        />
-        
-        {/* Quick Add Button - appears on hover */}
-        <div className="absolute inset-x-4 bottom-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-          <Button 
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-            onClick={handleAddToCart}
-          >
-            Add to Cart
-          </Button>
-        </div>
+    <>
+      <div className="group relative rounded-2xl border bg-card p-4">
+        <Link to={`/product/${product.slug}`} className="block">
+          <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="h-full w-full object-contain transition group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="font-semibold">{product.name}</h3>
+              {product.featured ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                  NEW
+                </span>
+              ) : null}
+            </div>
+
+            <div className="mt-2 flex items-end gap-2">
+              <div className="text-lg font-semibold">
+                £{Math.round(product.price)}
+              </div>
+              {product.originalPrice != null ? (
+                <div className="text-sm text-muted-foreground line-through">
+                  £{Math.round(product.originalPrice)}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </Link>
+
+        <Button
+          className="mt-4 w-full gap-2"
+          onClick={onQuickAdd}
+          type="button"
+        >
+          <ShoppingBag size={18} />
+          Add to cart
+        </Button>
       </div>
 
-      {/* Info */}
-      <div className="p-5">
-        <h3 className="font-medium text-foreground mb-2 group-hover:text-primary transition-colors">
-          {product.name}
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold text-foreground">£{product.price}</span>
-          <span className="text-sm text-muted-foreground line-through">£{product.originalPrice}</span>
+      {/* Variant picker modal */}
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-lg rounded-2xl border bg-card p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Choose a colour</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{product.name}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  setSelected(null);
+                }}
+                className="rounded-full p-2 hover:bg-muted"
+                type="button"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="aspect-square overflow-hidden rounded-xl bg-muted">
+                <img
+                  src={displayImage}
+                  alt={product.name}
+                  className="h-full w-full object-contain"
+                  loading="lazy"
+                />
+              </div>
+
+              <div>
+                <p className="text-sm text-muted-foreground">Colours</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {product.variants?.map((v) => {
+                    const active = selected?.slug === v.slug;
+                    return (
+                      <button
+                        key={v.slug}
+                        onClick={() => setSelected(v)}
+                        className={[
+                          "rounded-full border px-3 py-1 text-sm transition",
+                          active
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:bg-muted",
+                        ].join(" ")}
+                        type="button"
+                      >
+                        {v.name}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  className="mt-5 w-full"
+                  onClick={confirmAdd}
+                  disabled={!selected}
+                  type="button"
+                >
+                  Add {selected ? `(${selected.name})` : ""} to cart
+                </Button>
+
+                <Button
+                  className="mt-2 w-full"
+                  variant="ghost"
+                  onClick={() => {
+                    setOpen(false);
+                    setSelected(null);
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </>
   );
-};
-
-export default ProductCard;
+}
