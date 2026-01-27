@@ -19,9 +19,7 @@ export default function ProductDetail() {
     return getProductBySlug(slug);
   }, [slug]);
 
-  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(
-    null
-  );
+  const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(null);
 
   const displayImage = selectedVariant?.image ?? product?.image;
 
@@ -65,8 +63,6 @@ export default function ProductDetail() {
       : null;
 
   const onAddToCart = () => {
-    // CartContext stores the full Product + optional selected color.
-    // (Previously this used a non-existent `addItem` API, so clicking did nothing.)
     addToCart(product, selectedVariant ?? undefined);
   };
 
@@ -106,9 +102,7 @@ export default function ProductDetail() {
                         onClick={() => setSelectedVariant(v)}
                         className={[
                           "rounded-full border px-3 py-1 text-sm transition",
-                          active
-                            ? "border-primary bg-primary/10"
-                            : "border-border hover:bg-muted",
+                          active ? "border-primary bg-primary/10" : "border-border hover:bg-muted",
                         ].join(" ")}
                         type="button"
                       >
@@ -139,31 +133,10 @@ export default function ProductDetail() {
             <div className="mt-3 flex items-end gap-3">
               <div className="text-2xl font-semibold">{priceText}</div>
               {originalText ? (
-                <div className="text-muted-foreground line-through">
-                  {originalText}
-                </div>
+                <div className="text-muted-foreground line-through">{originalText}</div>
               ) : null}
             </div>
 
             {product.shortDescription ? (
-              <p className="mt-3 text-muted-foreground">
-                {product.shortDescription}
-              </p>
-            ) : null}
-
-            <p className="mt-4 leading-relaxed">{product.description}</p>
-
-            <Button className="mt-8 w-full gap-2" onClick={onAddToCart}>
-              <ShoppingBag size={18} />
-              Add to cart
-            </Button>
-
-            <p className="mt-3 text-xs text-muted-foreground">
-              You’ll complete payment securely via Stripe on checkout.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+              <p className="mt-3 text-muted-foreground">{product.shortDescription}</p>
+            ) :
