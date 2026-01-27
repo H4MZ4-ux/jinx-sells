@@ -6,7 +6,7 @@ import { ArrowLeft, ShoppingBag } from "lucide-react";
 
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { getProductBySlug, ColorVariant } from "@/data/products";
+import { getProductBySlug, type ColorVariant } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 
 export default function ProductDetail() {
@@ -20,8 +20,6 @@ export default function ProductDetail() {
   }, [slug]);
 
   const [selectedVariant, setSelectedVariant] = useState<ColorVariant | null>(null);
-
-  const displayImage = selectedVariant?.image ?? product?.image;
 
   if (!product) {
     return (
@@ -46,6 +44,8 @@ export default function ProductDetail() {
       </div>
     );
   }
+
+  const displayImage = selectedVariant?.image ?? product.image;
 
   const priceText = new Intl.NumberFormat("en-GB", {
     style: "currency",
@@ -77,10 +77,11 @@ export default function ProductDetail() {
         </Button>
 
         <div className="mt-6 grid gap-8 md:grid-cols-2">
+          {/* Left: image + variants */}
           <div className="rounded-2xl border bg-card p-6">
             <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
               <img
-                src={displayImage || product.image}
+                src={displayImage}
                 alt={product.name}
                 className="h-full w-full object-contain"
                 loading="lazy"
@@ -90,7 +91,7 @@ export default function ProductDetail() {
               />
             </div>
 
-            {product.variants?.length ? (
+            {!!product.variants?.length && (
               <div className="mt-5">
                 <p className="text-sm text-muted-foreground">Colours</p>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -124,19 +125,36 @@ export default function ProductDetail() {
                   </button>
                 </div>
               </div>
-            ) : null}
+            )}
           </div>
 
+          {/* Right: details */}
           <div className="rounded-2xl border bg-card p-6">
             <h1 className="text-3xl font-bold">{product.name}</h1>
 
             <div className="mt-3 flex items-end gap-3">
               <div className="text-2xl font-semibold">{priceText}</div>
-              {originalText ? (
-                <div className="text-muted-foreground line-through">{originalText}</div>
-              ) : null}
+              {originalText && <div className="text-muted-foreground line-through">{originalText}</div>}
             </div>
 
-            {product.shortDescription ? (
+            {/* ✅ No broken ternary — only render if it exists */}
+            {product.shortDescription && (
               <p className="mt-3 text-muted-foreground">{product.shortDescription}</p>
-            ) :
+            )}
+
+            <p className="mt-4 leading-relaxed">{product.description}</p>
+
+            <Button className="mt-8 w-full gap-2" onClick={onAddToCart}>
+              <ShoppingBag size={18} />
+              Add to cart
+            </Button>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              You’ll complete payment securely via Stripe on checkout.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
