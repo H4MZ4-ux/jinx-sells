@@ -16,6 +16,10 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
 
+  // Flat-rate shipping (GBP). Change this value to whatever you want to charge.
+  const SHIPPING_PRICE = 4.99;
+  const orderTotal = totalPrice + SHIPPING_PRICE;
+
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       clearCart();
@@ -57,6 +61,7 @@ const Checkout = () => {
         body: {
           items: cartItems,
           customerEmail: email,
+          shippingPrice: SHIPPING_PRICE,
           origin: window.location.origin,
         },
       });
@@ -166,7 +171,7 @@ const Checkout = () => {
                     Redirecting to payment...
                   </>
                 ) : (
-                  `Pay £${totalPrice.toFixed(2)}`
+                  `Pay £${orderTotal.toFixed(2)}`
                 )}
               </Button>
             </div>
@@ -213,11 +218,11 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span className="text-primary">Free</span>
+                <span>£{SHIPPING_PRICE.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-xl font-bold pt-3 border-t border-border">
                 <span>Total</span>
-                <span>£{totalPrice.toFixed(2)}</span>
+                <span>£{orderTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
