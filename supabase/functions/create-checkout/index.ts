@@ -1,109 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+// supabase/functions/create-checkout/index.ts
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+  apiVersion: "2023-10-16",
+});
 
-@layer base {
-  :root {
-    --background: 40 33% 96%;
-    --foreground: 0 0% 10%;
-
-    --card: 40 25% 98%;
-    --card-foreground: 0 0% 10%;
-
-    --popover: 40 25% 98%;
-    --popover-foreground: 0 0% 10%;
-
-    --primary: 300 100% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 40 20% 92%;
-    --secondary-foreground: 0 0% 10%;
-
-    --muted: 40 15% 90%;
-    --muted-foreground: 0 0% 40%;
-
-    --accent: 300 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
-    --ring: 300 100% 50%;
-
-    --radius: 0.75rem;
-
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(300, 100%, 50%), hsl(320, 100%, 60%));
-    --gradient-hover: linear-gradient(135deg, hsl(320, 100%, 60%), hsl(300, 100%, 50%));
-    --shadow-card: 0 4px 20px -4px hsla(300, 100%, 50%, 0.1);
-    --shadow-card-hover: 0 8px 30px -4px hsla(300, 100%, 50%, 0.2);
-  }
-
-  .dark {
-    --background: 0 0% 8%;
-    --foreground: 40 33% 96%;
-
-    --card: 0 0% 12%;
-    --card-foreground: 40 33% 96%;
-
-    --popover: 0 0% 12%;
-    --popover-foreground: 40 33% 96%;
-
-    --primary: 300 100% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 40 33% 96%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 40 15% 60%;
-
-    --accent: 300 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 40 33% 96%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 300 100% 50%;
-  }
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    },
+  });
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return json({ ok: true });
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Space Grotesk', sans-serif;
-  }
+  try {
+    const { email, items, shipping } = await req.json();
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
-  }
-}
+    if (!email || !Array.isArray(items) || items.length === 0) {
+      return json({ error: "Missing email or items" }, 400);
+    }
 
-@layer components {
-  .gradient-text {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+    const origin = req.headers.get("origin") ?? "http://localhost:5173";
 
-  .card-shadow {
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
+    const line_items = items.map((i: any) => {
+      const unitAmount = Math.round(Number(i.price) * 100); // GBP pence
+      const qty = Math.max(1, Number(i.quantity || 1));
 
-  .card-shadow:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-4px);
+      if (!Number.isFinite(unitAmount) || unitAmount < 0) {
+        throw new Error("Invalid price in items");
+      }
+
+      return {
+        quantity: qty,
+        price_data: {
+          currency: "gbp",
+          unit_amount: unitAmount,
+          product_data: {
+            name: String(i.name || "Item"),
+            images: i.image ? [String(i.image)] : [],
+          },
+        },
+      };
+    });
+
+    const shippingAmount = Math.round(Number(shipping || 0) * 100);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: String(email),
+      success_url: `${origin}/checkout-success?success=true`,
+      cancel_url: `${origin}/cart`,
+      line_items,
+      shipping_options: shippingAmount > 0 ? [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            fixed_amount: { amount: shippingAmount, currency: "gbp" },
+            display_name: "Shipping",
+          },
+        },
+      ] : undefined,
+    });
+
+    return json({ url: session.url });
+  } catch (e) {
+    console.error(e);
+    return json({ error: String(e?.message ?? e) }, 500);
   }
-}
+});
+
