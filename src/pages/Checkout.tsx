@@ -5,32 +5,56 @@ import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const SHIPPING_GBP = 5;
 
+function toNumber(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function formatGBP(value: number) {
+  const safe = Number.isFinite(value) ? value : 0;
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(value);
+  }).format(safe);
 }
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, clearCart } = useCart();
+  const { items } = useCart();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // ✅ Normalise cart items so price can’t become NaN
+  const normalisedItems = useMemo(() => {
+    return items.map((i) => {
+      const price = toNumber(i.price);
+      const quantity = Math.max(1, toNumber(i.quantity));
+      return {
+        ...i,
+        price,
+        quantity,
+      };
+    });
   }, [items]);
+
+  const subtotal = useMemo(() => {
+    return normalisedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+  }, [normalisedItems]);
 
   const total = useMemo(() => subtotal + SHIPPING_GBP, [subtotal]);
 
-  const canPay = items.length > 0 && email.trim().length > 5 && !loading;
+  const canPay =
+    normalisedItems.length > 0 && email.trim().length > 5 && !loading;
 
   const handlePay = async () => {
     if (!canPay) return;
@@ -38,34 +62,24 @@ export default function Checkout() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // ✅ Call Supabase Edge Function directly (works on Vercel)
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: {
           email,
-          items: items.map((i) => ({
-            name: i.name,
-            price: i.price, // GBP number
+          items: normalisedItems.map((i) => ({
+            name: i.name || "Item",
+            price: i.price, // number (GBP)
             quantity: i.quantity,
-            image: i.image,
+            image: i.image || "",
           })),
           shipping: SHIPPING_GBP,
-        }),
+        },
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Checkout failed");
-      }
+      if (error) throw error;
+      if (!data?.url) throw new Error("No checkout URL returned");
 
-      const data = (await res.json()) as { url?: string };
-      if (!data.url) throw new Error("No checkout url returned");
-
-      // Optional: clear cart AFTER Stripe success webhook instead
-      // For now keep it simple:
-      // clearCart();
-
-      window.location.href = data.url;
+      window.location.href = data.url as string;
     } catch (e) {
       console.error(e);
       alert("Checkout failed. Check your Stripe/Supabase settings.");
@@ -119,10 +133,8 @@ export default function Checkout() {
               {loading ? "Starting checkout..." : `Pay ${formatGBP(total)}`}
             </Button>
 
-            {items.length === 0 ? (
-              <p className="mt-3 text-sm text-destructive">
-                Your cart is empty.
-              </p>
+            {normalisedItems.length === 0 ? (
+              <p className="mt-3 text-sm text-destructive">Your cart is empty.</p>
             ) : null}
           </div>
 
@@ -131,22 +143,26 @@ export default function Checkout() {
             <h2 className="text-xl font-semibold">Order Summary</h2>
 
             <div className="mt-5 space-y-4">
-              {items.map((item) => (
+              {normalisedItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
                   <div className="h-14 w-14 overflow-hidden rounded-xl bg-muted">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
+                    {item.image ? (
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
                   </div>
+
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-medium">{item.name || "Item"}</div>
                     <div className="text-sm text-muted-foreground">
                       Qty: {item.quantity}
                     </div>
                   </div>
+
                   <div className="font-medium">
                     {formatGBP(item.price * item.quantity)}
                   </div>
