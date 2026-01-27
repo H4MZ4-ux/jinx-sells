@@ -1,109 +1,121 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+// Supabase Edge Function: create-checkout
+// Creates a Stripe Checkout Session from cart items.
+//
+// Required env vars (set in Supabase Project Settings → Functions):
+// - STRIPE_SECRET_KEY
+// Optional:
+// - STRIPE_SUCCESS_PATH (default: /checkout?success=true)
+// - STRIPE_CANCEL_PATH  (default: /checkout?canceled=true)
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import Stripe from "npm:stripe@14.25.0";
 
-@layer base {
-  :root {
-    --background: 40 33% 96%;
-    --foreground: 0 0% 10%;
+type IncomingItem = {
+  slug: string;
+  name: string;
+  price: number; // GBP
+  quantity: number;
+  image?: string;
+};
 
-    --card: 40 25% 98%;
-    --card-foreground: 0 0% 10%;
+type Body = {
+  items: IncomingItem[];
+  customerEmail?: string;
+  origin: string;
+  // Flat shipping in GBP (optional)
+  shippingPrice?: number;
+};
 
-    --popover: 40 25% 98%;
-    --popover-foreground: 0 0% 10%;
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
-    --primary: 300 100% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 40 20% 92%;
-    --secondary-foreground: 0 0% 10%;
-
-    --muted: 40 15% 90%;
-    --muted-foreground: 0 0% 40%;
-
-    --accent: 300 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 40 20% 88%;
-    --input: 40 20% 88%;
-    --ring: 300 100% 50%;
-
-    --radius: 0.75rem;
-
-    /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(300, 100%, 50%), hsl(320, 100%, 60%));
-    --gradient-hover: linear-gradient(135deg, hsl(320, 100%, 60%), hsl(300, 100%, 50%));
-    --shadow-card: 0 4px 20px -4px hsla(300, 100%, 50%, 0.1);
-    --shadow-card-hover: 0 8px 30px -4px hsla(300, 100%, 50%, 0.2);
-  }
-
-  .dark {
-    --background: 0 0% 8%;
-    --foreground: 40 33% 96%;
-
-    --card: 0 0% 12%;
-    --card-foreground: 40 33% 96%;
-
-    --popover: 0 0% 12%;
-    --popover-foreground: 40 33% 96%;
-
-    --primary: 300 100% 50%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 40 33% 96%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 40 15% 60%;
-
-    --accent: 300 100% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 40 33% 96%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 300 100% 50%;
-  }
+function gbpToPence(amount: number) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100);
 }
 
-@layer base {
-  * {
-    @apply border-border;
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Space Grotesk', sans-serif;
-  }
+  try {
+    if (req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
-  }
-}
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      return new Response(JSON.stringify({ error: "Missing STRIPE_SECRET_KEY" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-@layer components {
-  .gradient-text {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+    const body = (await req.json()) as Body;
+    if (!body?.origin || !Array.isArray(body?.items) || body.items.length === 0) {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-  .card-shadow {
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
+    const stripe = new Stripe(stripeKey, {
+      apiVersion: "2024-06-20",
+      httpClient: Stripe.createFetchHttpClient(),
+    });
 
-  .card-shadow:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-4px);
+    const successPath = Deno.env.get("STRIPE_SUCCESS_PATH") ?? "/checkout?success=true";
+    const cancelPath = Deno.env.get("STRIPE_CANCEL_PATH") ?? "/checkout?canceled=true";
+
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = body.items.map((item) => ({
+      price_data: {
+        currency: "gbp",
+        unit_amount: gbpToPence(item.price),
+        product_data: {
+          name: item.name,
+          images: item.image ? [item.image] : undefined,
+          metadata: { slug: item.slug },
+        },
+      },
+      quantity: item.quantity,
+    }));
+
+    const shippingPence = gbpToPence(body.shippingPrice ?? 0);
+    if (shippingPence > 0) {
+      line_items.push({
+        price_data: {
+          currency: "gbp",
+          unit_amount: shippingPence,
+          product_data: { name: "Shipping" },
+        },
+        quantity: 1,
+      });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items,
+      customer_email: body.customerEmail,
+      success_url: `${body.origin}${successPath}`,
+      cancel_url: `${body.origin}${cancelPath}`,
+    });
+
+    return new Response(JSON.stringify({ url: session.url }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("create-checkout error", err);
+    return new Response(
+      JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
-}
+});
