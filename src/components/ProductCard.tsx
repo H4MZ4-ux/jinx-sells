@@ -1,86 +1,66 @@
-import { Link } from "react-router-dom";
-import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { Product } from "@/data/products";
+import { useNavigate } from "react-router-dom";
 
-type Props = {
+interface ProductCardProps {
   product: Product;
-};
+}
 
-export default function ProductCard({ product }: Props) {
-  const { addItem } = useCart();
+const ProductCard = ({ product }: ProductCardProps) => {
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
-  const priceText = new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    maximumFractionDigits: 0,
-  }).format(product.price);
+  const handleClick = () => {
+    navigate(`/product/${product.slug}`);
+  };
 
-  const originalText =
-    product.originalPrice != null
-      ? new Intl.NumberFormat("en-GB", {
-          style: "currency",
-          currency: "GBP",
-          maximumFractionDigits: 0,
-        }).format(product.originalPrice)
-      : null;
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    addToCart(product);
+  };
 
   return (
-    <Link
-      to={`/product/${product.slug}`}
-      className="group block rounded-2xl border bg-card p-4 card-shadow"
+    <div 
+      className="group bg-card rounded-xl overflow-hidden card-shadow border border-border cursor-pointer"
+      onClick={handleClick}
     >
-      <div className="aspect-square w-full overflow-hidden rounded-xl bg-muted">
+      {/* Image Container */}
+      <div className="relative aspect-square bg-secondary/50 flex items-center justify-center p-8 overflow-hidden">
+        {product.isNew && (
+          <span className="absolute top-4 left-4 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+            New
+          </span>
+        )}
         <img
           src={product.image}
           alt={product.name}
-          className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-          loading="lazy"
+          className="w-3/4 h-auto object-contain transition-transform duration-500 group-hover:scale-110"
         />
-      </div>
-
-      <div className="mt-4 flex items-start justify-between gap-3">
-        <div>
-          <div className="font-semibold">{product.name}</div>
-
-          <div className="mt-1 flex items-end gap-2">
-            <div className="text-lg font-bold">{priceText}</div>
-            {originalText ? (
-              <div className="text-sm text-muted-foreground line-through">
-                {originalText}
-              </div>
-            ) : null}
-          </div>
+        
+        {/* Quick Add Button - appears on hover */}
+        <div className="absolute inset-x-4 bottom-4 opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <Button 
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+            onClick={handleAddToCart}
+          >
+            Add to Cart
+          </Button>
         </div>
-
-        {product.featured ? (
-          <span className="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary">
-            NEW
-          </span>
-        ) : null}
       </div>
 
-      <Button
-        className="mt-4 w-full gap-2"
-        onClick={(e) => {
-          // ✅ THIS is the important bit. Without this, the Link/card click wins.
-          e.preventDefault();
-          e.stopPropagation();
-
-          addItem({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image: product.image,
-            quantity: 1,
-            slug: product.slug,
-          });
-        }}
-      >
-        <ShoppingBag size={18} />
-        Add to cart
-      </Button>
-    </Link>
+      {/* Info */}
+      <div className="p-5">
+        <h3 className="font-medium text-foreground mb-2 group-hover:text-primary transition-colors">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-semibold text-foreground">£{product.price}</span>
+          <span className="text-sm text-muted-foreground line-through">£{product.originalPrice}</span>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default ProductCard;
