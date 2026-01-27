@@ -1,18 +1,9 @@
-// Supabase Edge Function: create-checkout
-// Creates a Stripe Checkout Session from cart items.
-//
-// Required env vars (set in Supabase Project Settings → Functions):
-// - STRIPE_SECRET_KEY
-// Optional:
-// - STRIPE_SUCCESS_PATH (default: /checkout?success=true)
-// - STRIPE_CANCEL_PATH  (default: /checkout?canceled=true)
-
 import Stripe from "npm:stripe@14.25.0";
 
 type IncomingItem = {
   slug: string;
   name: string;
-  price: number; // GBP
+  price: number; // GBP (e.g. 25.00)
   quantity: number;
   image?: string;
 };
@@ -21,8 +12,7 @@ type Body = {
   items: IncomingItem[];
   customerEmail?: string;
   origin: string;
-  // Flat shipping in GBP (optional)
-  shippingPrice?: number;
+  shippingPrice?: number; // GBP
 };
 
 const corsHeaders: Record<string, string> = {
@@ -59,6 +49,7 @@ Deno.serve(async (req) => {
     }
 
     const body = (await req.json()) as Body;
+
     if (!body?.origin || !Array.isArray(body?.items) || body.items.length === 0) {
       return new Response(JSON.stringify({ error: "Invalid request body" }), {
         status: 400,
@@ -87,6 +78,7 @@ Deno.serve(async (req) => {
       quantity: item.quantity,
     }));
 
+    // ✅ REAL shipping charge
     const shippingPence = gbpToPence(body.shippingPrice ?? 0);
     if (shippingPence > 0) {
       line_items.push({
