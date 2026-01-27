@@ -1,7 +1,5 @@
 // src/pages/ProductDetail.tsx
 
-import { useEffect } from "react";
-import { fetchStockMap } from "@/lib/stock";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
@@ -14,7 +12,7 @@ import { useCart } from "@/context/CartContext";
 export default function ProductDetail() {
   const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
-  const { addItem } = useCart();
+  const { addToCart } = useCart();
 
   const product = useMemo(() => {
     if (!slug) return undefined;
@@ -67,16 +65,9 @@ export default function ProductDetail() {
       : null;
 
   const onAddToCart = () => {
-    addItem({
-      id: product.id + (selectedVariant ? `-${selectedVariant.slug}` : ""),
-      name: product.name + (selectedVariant ? ` - ${selectedVariant.name}` : ""),
-      price: product.price,
-      image: displayImage || product.image,
-      quantity: 1,
-      slug: product.slug,
-    });
-
-    navigate("/cart");
+    // CartContext stores the full Product + optional selected color.
+    // (Previously this used a non-existent `addItem` API, so clicking did nothing.)
+    addToCart(product, selectedVariant ?? undefined);
   };
 
   return (
