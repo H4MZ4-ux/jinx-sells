@@ -1,60 +1,77 @@
 // src/pages/Checkout.tsx
+
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard } from "lucide-react";
-
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 
 const SHIPPING_GBP = 5;
 
-function toNumber(value: unknown): number {
-  // Handles: 15, "15", "£15", "15.00", undefined, null
-  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  if (typeof value === "string") {
-    const cleaned = value.replace(/[^\d.]/g, "");
-    const n = Number(cleaned);
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
-}
-
-function formatGBP(amount: number): string {
+function formatGBP(value: number) {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0);
+  }).format(value);
 }
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items } = useCart();
+  const { items, clearCart } = useCart();
+
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => {
-      const price = toNumber((item as any).price);
-      const qty = Math.max(1, toNumber((item as any).quantity));
-      return sum + price * qty;
-    }, 0);
+    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   }, [items]);
 
-  const shipping = items.length > 0 ? SHIPPING_GBP : 0;
-  const total = subtotal + shipping;
+  const total = useMemo(() => subtotal + SHIPPING_GBP, [subtotal]);
 
-  // For the summary card (just show first item like your UI currently does)
-  const firstItem = items[0];
+  const canPay = items.length > 0 && email.trim().length > 5 && !loading;
 
-  const onPay = async () => {
-    // If you already call your Supabase function here, keep it.
-    // This is just the UI fix; your existing checkout creation logic can stay.
-    // Add a guard:
-    if (!items.length) return;
-    // navigate("/payment") or call your existing create-checkout session code
+  const handlePay = async () => {
+    if (!canPay) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          items: items.map((i) => ({
+            name: i.name,
+            price: i.price, // GBP number
+            quantity: i.quantity,
+            image: i.image,
+          })),
+          shipping: SHIPPING_GBP,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Checkout failed");
+      }
+
+      const data = (await res.json()) as { url?: string };
+      if (!data.url) throw new Error("No checkout url returned");
+
+      // Optional: clear cart AFTER Stripe success webhook instead
+      // For now keep it simple:
+      // clearCart();
+
+      window.location.href = data.url;
+    } catch (e) {
+      console.error(e);
+      alert("Checkout failed. Check your Stripe/Supabase settings.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -63,102 +80,94 @@ export default function Checkout() {
 
       <div className="mx-auto max-w-6xl px-4 py-10">
         <button
-          type="button"
           onClick={() => navigate("/cart")}
-          className="mb-6 inline-flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          className="text-sm text-muted-foreground hover:text-foreground"
+          type="button"
         >
-          <ArrowLeft size={18} />
-          Back to Cart
+          ← Back to Cart
         </button>
 
-        <h1 className="text-4xl font-bold">Checkout</h1>
+        <h1 className="mt-3 text-4xl font-bold">Checkout</h1>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
           {/* Left */}
           <div className="rounded-2xl border bg-card p-6">
             <h2 className="text-xl font-semibold">Contact</h2>
 
-            <div className="mt-6">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                className="mt-2"
-                placeholder="your@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <p className="mt-3 text-sm text-muted-foreground">
-                You’ll be redirected to Stripe to complete your payment securely.
-              </p>
-            </div>
+            <label className="mt-5 block text-sm font-medium">Email</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-2 w-full rounded-xl border bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-primary"
+              placeholder="your@email.com"
+              type="email"
+            />
 
-            <div className="mt-6 rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CreditCard size={16} />
-                Secure payment powered by Stripe
-              </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              You’ll be redirected to Stripe to complete your payment securely.
+            </p>
+
+            <div className="mt-5 rounded-xl border bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+              Secure payment powered by Stripe
             </div>
 
             <Button
               className="mt-8 w-full"
-              onClick={onPay}
-              disabled={!items.length}
+              onClick={handlePay}
+              disabled={!canPay}
             >
-              Pay {formatGBP(total)}
+              {loading ? "Starting checkout..." : `Pay ${formatGBP(total)}`}
             </Button>
+
+            {items.length === 0 ? (
+              <p className="mt-3 text-sm text-destructive">
+                Your cart is empty.
+              </p>
+            ) : null}
           </div>
 
           {/* Right */}
           <div className="rounded-2xl border bg-card p-6">
             <h2 className="text-xl font-semibold">Order Summary</h2>
 
-            <div className="mt-6 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 overflow-hidden rounded-xl bg-muted">
-                  {firstItem?.image ? (
+            <div className="mt-5 space-y-4">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center gap-4">
+                  <div className="h-14 w-14 overflow-hidden rounded-xl bg-muted">
                     <img
-                      src={firstItem.image}
-                      alt={firstItem.name}
+                      src={item.image}
+                      alt={item.name}
                       className="h-full w-full object-cover"
                       loading="lazy"
                     />
-                  ) : null}
-                </div>
-                <div>
-                  <div className="font-medium">{firstItem?.name ?? "—"}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Qty: {firstItem?.quantity ?? 0}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Qty: {item.quantity}
+                    </div>
+                  </div>
+                  <div className="font-medium">
+                    {formatGBP(item.price * item.quantity)}
                   </div>
                 </div>
-              </div>
-
-              <div className="text-right font-medium">
-                {formatGBP(
-                  toNumber(firstItem?.price) * toNumber(firstItem?.quantity)
-                )}
-              </div>
+              ))}
             </div>
 
-            <div className="my-6 border-t" />
-
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
+            <div className="mt-6 border-t pt-4 space-y-2">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Subtotal</span>
                 <span>{formatGBP(subtotal)}</span>
               </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Shipping</span>
-                <span className="text-primary">
-                  {shipping ? `${formatGBP(shipping)} UK` : formatGBP(0)}
-                </span>
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>Shipping</span>
+                <span>{formatGBP(SHIPPING_GBP)}</span>
               </div>
-            </div>
 
-            <div className="my-6 border-t" />
-
-            <div className="flex items-center justify-between">
-              <span className="text-xl font-semibold">Total</span>
-              <span className="text-3xl font-bold">{formatGBP(total)}</span>
+              <div className="mt-3 flex items-center justify-between text-2xl font-bold">
+                <span>Total</span>
+                <span>{formatGBP(total)}</span>
+              </div>
             </div>
           </div>
         </div>
