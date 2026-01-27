@@ -92,13 +92,13 @@ export const products: Product[] = [
     price: 110,
     originalPrice: 1499,
     image:
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80",
+      "https://cdsassets.apple.com/live/7WUAS350/images/tech-specs/iphone-17-pro-17-pro-max-hero.png",
     shortDescription: "Orange only. Big screen, premium feel.",
     description:
       "iPhone 17 Pro Max in Orange. Premium build, fast performance, and an incredible display.",
     featured: true,
     variants: [{ name: "Orange", slug: "orange", image:
-      "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=80"
+      "https://cdsassets.apple.com/live/7WUAS350/images/tech-specs/iphone-17-pro-17-pro-max-hero.png"
     }],
   },
 ];
