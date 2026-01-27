@@ -13,10 +13,11 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const { items, totalPrice, clearCart } = useCart();
   const { toast } = useToast();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
 
-  // Flat-rate shipping (GBP). Change this value to whatever you want to charge.
+  // ✅ Set your real shipping cost here
   const SHIPPING_PRICE = 4.99;
   const orderTotal = totalPrice + SHIPPING_PRICE;
 
@@ -52,28 +53,26 @@ const Checkout = () => {
       const cartItems = items.map(({ product, quantity, selectedColor }) => ({
         slug: selectedColor?.slug || product.slug,
         name: selectedColor ? `${product.name} - ${selectedColor.name}` : product.name,
-        price: product.price, // GBP; Edge Function converts to pence
+        price: product.price, // GBP number
         quantity,
-        image: selectedColor?.image || (typeof product.image === "string" ? product.image : undefined),
+        image:
+          selectedColor?.image ||
+          (typeof product.image === "string" ? product.image : undefined),
       }));
 
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
           items: cartItems,
           customerEmail: email,
-          shippingPrice: SHIPPING_PRICE,
           origin: window.location.origin,
+          shippingPrice: SHIPPING_PRICE, // ✅ THIS makes shipping charge real
         },
       });
 
       if (error) throw new Error(error.message);
+      if (!data?.url) throw new Error("No checkout URL returned");
 
-      if (data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-
-      throw new Error("No checkout URL returned");
+      window.location.href = data.url;
     } catch (error) {
       console.error("Checkout error:", error);
       toast({
