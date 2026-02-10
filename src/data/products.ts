@@ -150,7 +150,7 @@ export const products: Product[] = [
     slug: "apple-watch-ultra",
     price: 30,
     originalPrice: 399,
-    image: "https://pngdownload.io/wp-content/uploads/2025/06/Apple-Watch-Ultra-2-Rugged-Smartwatch-300x281.webp",
+    image: "https://gigistore.com.ua/image/cache/catalog/product/Apple%20Watch%20Series/Apple%20Watch%20Ultra%203/Ocean%20Band%20%D0%A2%D0%B8%D1%82%D0%B0%D0%BD/%D0%B7%D0%B0%D0%B2%D0%B0%D0%BD%D1%82%D0%B0%D0%B6%D0%B5%D0%BD%D0%BD%D1%8F%20(6)-732x584.png",
     shortDescription: "Apple Watch with hiking in mind.",
     description:
       "Apple Watch configured with hiking band options, combining performance and style.",
