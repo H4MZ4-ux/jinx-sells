@@ -150,7 +150,7 @@ export const products: Product[] = [
     slug: "apple-watch-ultra",
     price: 30,
     originalPrice: 399,
-    image: "https://pngdownload.io/wp-content/uploads/2025/06/Apple-Watch-Ultra-2-Rugged-Smartwatch-300x281.webp,
+    image: "https://pngdownload.io/wp-content/uploads/2025/06/Apple-Watch-Ultra-2-Rugged-Smartwatch-300x281.webp",
     shortDescription: "Apple Watch with hiking in mind.",
     description:
       "Apple Watch configured with hiking band options, combining performance and style.",
