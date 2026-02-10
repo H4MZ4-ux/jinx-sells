@@ -18,7 +18,7 @@ const Checkout = () => {
   const [email, setEmail] = useState("");
 
   // ✅ Set your real shipping cost here
-  const SHIPPING_PRICE = 4.99;
+  const SHIPPING_PRICE = 8.50;
   const orderTotal = totalPrice + SHIPPING_PRICE;
 
   useEffect(() => {
