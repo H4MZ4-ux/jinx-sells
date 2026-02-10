@@ -75,11 +75,11 @@ export const products: Product[] = [
     featured: true,
     variants: [
       { name: "Black", slug: "black", image: "/airpods-max-black.png" },
-      { name: "Blue", slug: "blue", image: "/airpods-max-blue.png" },
-      { name: "White", slug: "white", image: "/airpods-max-white.png" },
-      { name: "Purple", slug: "purple", image: "/airpods-max-purple.png" },
-      { name: "Pink", slug: "pink", image: "/airpods-max-pink.png" },
-      { name: "Green", slug: "green", image: "/airpods-max-green.png" },
+      { name: "Blue", slug: "blue", image: "https://www.dimprice.co.uk/image/cache/png/apple-airpods-max/blue/apple-airpods-max-blue-01-190x190.png" },
+      { name: "White", slug: "white", image: "https://www.dimprice.co.uk/image/cache/png/apple-airpods-max/silver/apple-airpods-max-silver-01-800x800.png" },
+      { name: "Purple", slug: "purple", image: "https://www.ourfriday.co.uk/image/cache/catalog/Apple/apple-airpods-max-usbc-purple-3-190x190.png" },
+      { name: "Pink", slug: "pink", image: "https://w7.pngwing.com/pngs/193/322/png-transparent-apple-airpods-max.png" },
+      { name: "Green", slug: "green", image: "https://www.dimprice.co.uk/image/cache/png/apple-airpods-max/green/apple-airpods-max-green-01-190x190.png" },
     ],
   },
 
