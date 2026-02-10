@@ -114,7 +114,7 @@ export const products: Product[] = [
     slug: "dyson-airwrap",
     price: 30,
     originalPrice: 549,
-    image: "/dyson-airwrap.png",
+    image: "https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/images/products/hero/395915-01.png?fmt=png-alpha&scl=1&fmt=png-alpha",
     shortDescription: "Multi-styler for curls, waves and smoothing.",
     description:
       "Dyson Airwrap multi-styler with multiple attachments for styling hair without extreme heat damage.",
@@ -126,7 +126,7 @@ export const products: Product[] = [
     slug: "dyson-supersonic",
     price: 30,
     originalPrice: 329,
-    image: "/dyson-supersonic.png",
+    image: "https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/leap-petite-global/products/personal-care/q4-gifting/pdp/supersonic-pdp/Variant-page-Spec-image-supersonic-assets-DKBLCO-480x360.png?$responsive$&fmt=png-alpha&cropPathE=desktop&fit=stretch,1&wid=960",
     shortDescription: "Fast drying with intelligent heat control.",
     description:
       "Dyson Supersonic hair dryer engineered for fast drying and precise styling without extreme heat.",
@@ -138,22 +138,22 @@ export const products: Product[] = [
     slug: "apple-watch-series-11",
     price: 30,
     originalPrice: 399,
-    image: "/apple-watch-series-11.png",
+    image: "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MXLJ3ref_VW_34FR+watch-case-42-aluminum-jetblack-nc-s11_VW_34FR+watch-face-42-aluminum-jetblack-s11_VW_34FR?wid=2000&hei=2000&fmt=png-alpha&.v=SmNOTU80TDhXckVBUGdaWWZTZVBXcDNqbENGcEFFTlJVaXJwL2VzdGxEMU9NU1VZS1dIdzdkNjZzejNRdFdUZy8xbCtuVHZDSE15QWNIRjhJS1laOWdtTHNhRmRKQkE2OXJHRVEvRTFWdXVoSHlqYUY2YWdsek45M29HTWxyVHhMUHN2QTFTcUNWV0Rqc080eGxSYWYxL3Zzb3FoQjh0d3dkcDd3eDRqSitDZkRjQkIybGJueTVKZ1JNcEVaL2MycCtoc09YUzZ0bkFjbkhGRyticGRWQQ",
     shortDescription: "Advanced health and fitness tracking.",
     description:
       "Apple Watch Series 11 with enhanced health sensors, fitness tracking, and a brighter display.",
     featured: true,
   },
   {
-    id: "apple-watch-mens",
-    name: "Apple Watch (Men’s)",
-    slug: "apple-watch-mens",
+    id: "apple-watch-ultra",
+    name: "Apple Watch Ultra 2",
+    slug: "apple-watch-ultra",
     price: 30,
     originalPrice: 399,
-    image: "/apple-watch-mens.png",
-    shortDescription: "Apple Watch with men’s band style.",
+    image: "https://pngdownload.io/wp-content/uploads/2025/06/Apple-Watch-Ultra-2-Rugged-Smartwatch-300x281.webp,
+    shortDescription: "Apple Watch with hiking in mind.",
     description:
-      "Apple Watch configured with a men’s band option, combining performance and style.",
+      "Apple Watch configured with hiking band options, combining performance and style.",
     featured: true,
   },
   {
@@ -162,7 +162,7 @@ export const products: Product[] = [
     slug: "rayban-meta-glasses",
     price: 30,
     originalPrice: 299,
-    image: "/rayban-meta.png",
+    image: "https://assets2.sunglasshut.com/cdn-record-files-pi/f2d66bc3-3efe-4470-bce2-b07c006d00b3/187169b4-d138-4720-bdd6-b07c006d0348/0RW4006__601_SB__P21__shad__qt.png?impolicy=SGH_bgtransparent&width=1024",
     shortDescription: "Smart glasses with camera and audio.",
     description:
       "Ray-Ban Meta smart glasses featuring hands-free photo capture, audio playback, and sleek design.",
