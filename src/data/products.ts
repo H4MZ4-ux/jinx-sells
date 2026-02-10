@@ -75,15 +75,15 @@ export const products: Product[] = [
     featured: true,
     variants: [
       { name: "Black", slug: "black", image: "/airpods-max-black.png" },
-      { name: "Blue", slug: "blue"},
-      { name: "White", slug: "white"},
-      { name: "Purple", slug: "purple"},
-      { name: "Pink", slug: "pink"},
-      { name: "Green", slug: "green"},
+      { name: "Blue", slug: "blue", image: "/airpods-max-blue.png" },
+      { name: "White", slug: "white", image: "/airpods-max-white.png" },
+      { name: "Purple", slug: "purple", image: "/airpods-max-purple.png" },
+      { name: "Pink", slug: "pink", image: "/airpods-max-pink.png" },
+      { name: "Green", slug: "green", image: "/airpods-max-green.png" },
     ],
   },
 
-  // 🔥 NEW PRODUCT
+  // 🔥 iPhone
   {
     id: "iphone-17-pro-max",
     name: "iPhone 17 Pro Max *NEW*",
@@ -104,6 +104,69 @@ export const products: Product[] = [
           "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/iphone-15-pro-max-orange?wid=532&hei=582&fmt=png-alpha",
       },
     ],
+  },
+
+  // 🔥 NEW PRODUCTS YOU REQUESTED
+
+  {
+    id: "dyson-airwrap",
+    name: "Dyson Airwrap",
+    slug: "dyson-airwrap",
+    price: 30,
+    originalPrice: 549,
+    image: "/dyson-airwrap.png",
+    shortDescription: "Multi-styler for curls, waves and smoothing.",
+    description:
+      "Dyson Airwrap multi-styler with multiple attachments for styling hair without extreme heat damage.",
+    featured: true,
+  },
+  {
+    id: "dyson-supersonic",
+    name: "Dyson Supersonic",
+    slug: "dyson-supersonic",
+    price: 30,
+    originalPrice: 329,
+    image: "/dyson-supersonic.png",
+    shortDescription: "Fast drying with intelligent heat control.",
+    description:
+      "Dyson Supersonic hair dryer engineered for fast drying and precise styling without extreme heat.",
+    featured: true,
+  },
+  {
+    id: "apple-watch-series-11",
+    name: "Apple Watch Series 11",
+    slug: "apple-watch-series-11",
+    price: 30,
+    originalPrice: 399,
+    image: "/apple-watch-series-11.png",
+    shortDescription: "Advanced health and fitness tracking.",
+    description:
+      "Apple Watch Series 11 with enhanced health sensors, fitness tracking, and a brighter display.",
+    featured: true,
+  },
+  {
+    id: "apple-watch-mens",
+    name: "Apple Watch (Men’s)",
+    slug: "apple-watch-mens",
+    price: 30,
+    originalPrice: 399,
+    image: "/apple-watch-mens.png",
+    shortDescription: "Apple Watch with men’s band style.",
+    description:
+      "Apple Watch configured with a men’s band option, combining performance and style.",
+    featured: true,
+  },
+  {
+    id: "rayban-meta-glasses",
+    name: "Ray-Ban Meta Smart Glasses",
+    slug: "rayban-meta-glasses",
+    price: 30,
+    originalPrice: 299,
+    image: "/rayban-meta.png",
+    shortDescription: "Smart glasses with camera and audio.",
+    description:
+      "Ray-Ban Meta smart glasses featuring hands-free photo capture, audio playback, and sleek design.",
+    featured: true,
   },
 ];
 
