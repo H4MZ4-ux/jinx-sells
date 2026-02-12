@@ -91,24 +91,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ✅ THIS is what makes Stripe show postcode/address fields
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items,
-
-      // Email (customer)
       customer_email: body.customerEmail,
 
-      // ✅ FORCE Stripe Checkout to ask for address & phone
+      // Force address collection (postcode included)
       shipping_address_collection: {
-        allowed_countries: ["GB"], // add more if you want
+        allowed_countries: ["GB"], // add more if needed
       },
       billing_address_collection: "required",
       phone_number_collection: { enabled: true },
-
-      // Helpful metadata for webhook emails/logs
-      metadata: {
-        app: "jinx-sells",
-      },
 
       success_url: `${body.origin}${successPath}`,
       cancel_url: `${body.origin}${cancelPath}`,
