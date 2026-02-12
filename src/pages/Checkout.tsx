@@ -17,8 +17,8 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [email, setEmail] = useState("");
 
-  // ✅ Set your real shipping cost here
-  const SHIPPING_PRICE = 8.50;
+  // Change shipping price here
+  const SHIPPING_PRICE = 4.99;
   const orderTotal = totalPrice + SHIPPING_PRICE;
 
   useEffect(() => {
@@ -47,37 +47,48 @@ const Checkout = () => {
       return;
     }
 
+    if (!items.length) {
+      toast({
+        title: "Cart is empty",
+        description: "Add something to your cart first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
       const cartItems = items.map(({ product, quantity, selectedColor }) => ({
         slug: selectedColor?.slug || product.slug,
         name: selectedColor ? `${product.name} - ${selectedColor.name}` : product.name,
-        price: product.price, // GBP number
+        price: product.price,
         quantity,
         image:
           selectedColor?.image ||
           (typeof product.image === "string" ? product.image : undefined),
       }));
 
+      // IMPORTANT: This must hit the same Supabase project you deployed the function to.
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body: {
           items: cartItems,
           customerEmail: email,
+          shippingPrice: SHIPPING_PRICE,
           origin: window.location.origin,
-          shippingPrice: SHIPPING_PRICE, // ✅ THIS makes shipping charge real
         },
       });
 
       if (error) throw new Error(error.message);
       if (!data?.url) throw new Error("No checkout URL returned");
 
+      // Redirect to Stripe Checkout (fresh session every time)
       window.location.href = data.url;
-    } catch (error) {
-      console.error("Checkout error:", error);
+    } catch (err) {
+      console.error(err);
       toast({
         title: "Checkout failed",
-        description: error instanceof Error ? error.message : "Please try again.",
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -93,7 +104,7 @@ const Checkout = () => {
           </div>
           <h1 className="text-3xl font-bold mb-4">Order Complete!</h1>
           <p className="text-muted-foreground mb-8">
-            Thank you for shopping with Jinx Sels. Your order confirmation has been sent to your email.
+            Thank you for shopping. Your order confirmation has been sent to your email.
           </p>
           <Button onClick={() => navigate("/")} className="bg-primary hover:bg-primary/90">
             Continue Shopping
@@ -145,7 +156,7 @@ const Checkout = () => {
                       className="mt-1"
                     />
                     <p className="text-sm text-muted-foreground mt-2">
-                      You'll be redirected to Stripe to complete your payment securely.
+                      You’ll be redirected to Stripe to enter your address (including postcode) and pay securely.
                     </p>
                   </div>
                 </div>
@@ -196,10 +207,7 @@ const Checkout = () => {
                     <h3 className="font-medium">{product.name}</h3>
                     {selectedColor && (
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full border border-border"
-                          style={{ backgroundColor: selectedColor.color }}
-                        />
+                        <span className="w-2.5 h-2.5 rounded-full border border-border" />
                         {selectedColor.name}
                       </div>
                     )}
