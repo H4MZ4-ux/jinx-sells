@@ -18,8 +18,8 @@ const Checkout = () => {
   const [email, setEmail] = useState("");
 
   // Change shipping price here
-  const SHIPPING_PRICE = 4.99;
-  const orderTotal = totalPrice + SHIPPING_PRICE;
+  const SHIPPING_PRICE = 7.50;
+  const orderTotal = totalPrice + SHIPPING_PRICE
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
